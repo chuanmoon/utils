@@ -86,31 +86,24 @@ func (client *NatClient) CallJsonWithTimeout(subject, method string, timeoutSeco
 }
 
 func (client *NatClient) _callJsonWithTimeout(subject, method string, timeoutSeconds int64, args, receiver interface{}) error {
-	startTime := time.Now()
-	var argsbytes = []byte{}
-	var replyBytes = []byte{}
-	var err error
-	defer func() {
-		replyStr := string(replyBytes)
-		if len(replyStr) > 1024 {
-			replyStr = replyStr[:1024]
-		}
+	now := time.Now()
+	defer func(begin time.Time) {
 		client.logger.Info("nats client call:",
-			zap.String("used", time.Since(startTime).String()),
+			zap.String("used", time.Since(begin).String()),
 			zap.String("queue", subject),
 			zap.String("method", method),
-			zap.ByteString("args", argsbytes),
-			zap.String("reply", replyStr),
 		)
-	}()
+	}(now)
+
 	if client == nil {
 		return errors.New("[NATS Call] client is nil")
 	}
-	argsbytes, err = mjson.Marshal(args)
+	argsbytes, err := mjson.Marshal(args)
 	if err != nil {
 		return errors.New("[NATS Call] args Marshal error: " + err.Error())
 	}
 
+	var replyBytes []byte
 	err = client.CallBytesWithTimeout(subject, method, timeoutSeconds, &argsbytes, &replyBytes, EncodeTypeJson)
 	if err != nil {
 		return errors.New("[NATS Call] remote error: " + err.Error())
@@ -132,25 +125,24 @@ func (client *NatClient) CallMsgpackWithTimeout(subject, method string, timeoutS
 }
 
 func (client *NatClient) _callMsgpackWithTimeout(subject, method string, timeoutSeconds int64, args, receiver interface{}) error {
-	startTime := time.Now()
-	var argsbytes = []byte{}
-	var replyBytes = []byte{}
-	var err error
-	defer func() {
+	now := time.Now()
+	defer func(begin time.Time) {
 		client.logger.Info("nats client call:",
-			zap.String("used", time.Since(startTime).String()),
+			zap.String("used", time.Since(begin).String()),
 			zap.String("queue", subject),
 			zap.String("method", method),
 		)
-	}()
+	}(now)
+
 	if client == nil {
 		return errors.New("[NATS Call] client is nil")
 	}
-	argsbytes, err = msgpack.Marshal(args)
+	argsbytes, err := msgpack.Marshal(args)
 	if err != nil {
 		return errors.New("[NATS Call] args Marshal error: " + err.Error())
 	}
 
+	var replyBytes = []byte{}
 	err = client.CallBytesWithTimeout(subject, method, timeoutSeconds, &argsbytes, &replyBytes, EncodeTypeMsgpack)
 	if err != nil {
 		return errors.New("[NATS Call] remote error: " + err.Error())
