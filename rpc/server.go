@@ -13,6 +13,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/nats-io/nats.go"
+	"github.com/vmihailenco/msgpack/v5"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +23,7 @@ type serverCodec struct {
 	msgs         chan *nats.Msg
 	c            *nats.Conn
 	params       *([]byte)
+	encodeType   EncodeType
 	pending      map[uint64]*nats.Msg
 	mutex        sync.Mutex // protects seq, pending
 	seq          uint64
@@ -52,6 +54,7 @@ func (c *serverCodec) ReadRequestHeader(r *rpc.Request) error {
 
 	r.ServiceMethod = msg.Header.Get("ServiceMethod")
 	c.params = &msg.Data
+	c.encodeType = EncodeType(msg.Header.Get("EncodeType"))
 
 	c.mutex.Lock()
 	c.seq++
@@ -70,7 +73,13 @@ func (c *serverCodec) ReadRequestBody(x interface{}) error {
 		return errMissingParams
 	}
 
-	return jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(*c.params, x)
+	if c.encodeType == EncodeTypeJson {
+		return jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(*c.params, x)
+	} else if c.encodeType == EncodeTypeMsgpack {
+		return msgpack.Unmarshal(*c.params, x)
+	} else {
+		return errors.New("njrpc: unsupported encode type")
+	}
 }
 
 func (c *serverCodec) WriteResponse(r *rpc.Response, x interface{}) error {
@@ -91,7 +100,15 @@ func (c *serverCodec) WriteResponse(r *rpc.Response, x interface{}) error {
 		},
 	}
 	if r.Error == "" {
-		data, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(x)
+		var data []byte
+		var err error
+		if c.encodeType == EncodeTypeJson {
+			data, err = jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(x)
+		} else if c.encodeType == EncodeTypeMsgpack {
+			data, err = msgpack.Marshal(x)
+		} else {
+			return errors.New("njrpc: unsupported encode type")
+		}
 		if err != nil {
 			return fmt.Errorf("marshal response: %s", err)
 		}

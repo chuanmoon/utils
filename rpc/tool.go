@@ -11,8 +11,12 @@ import (
 )
 
 type Client interface {
-	Call(subject, method string, args, receiver interface{}) error
-	CallWithTimeout(subject, method string, timeoutSeconds int64, args, receiver interface{}) error
+	CallJson(subject, method string, args, receiver interface{}) error
+	CallJsonWithTimeout(subject, method string, timeoutSeconds int64, args, receiver interface{}) error
+	CallBytes(subject, method string, args, receiver *[]byte, encodeType EncodeType) error
+	CallBytesWithTimeout(subject, method string, timeoutSeconds int64, args, receiver *[]byte, encodeType EncodeType) error
+	CallMsgpack(subject, method string, args, receiver interface{}) error
+	CallMsgpackWithTimeout(subject, method string, timeoutSeconds int64, args, receiver interface{}) error
 	Subscribe(subj string, callback func(*SubscribeData)) error
 	Publish(subj string, data *SubscribeData) error
 }
@@ -26,7 +30,7 @@ type Tool struct {
 	mutex    sync.Mutex
 }
 
-func New(appName string, logger *zap.Logger) *Tool {
+func NewTool(appName string, logger *zap.Logger) *Tool {
 	var err error
 	if logger == nil {
 		logger, err = zap.NewProduction()

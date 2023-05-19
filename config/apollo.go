@@ -10,12 +10,16 @@ import (
 var client agollo.Client
 var namespace string
 
-func Init(namespaces []string) {
-	appId := os.Getenv("apollo_app_id")
-	cluster := os.Getenv("apollo_cluster")
-	ip := os.Getenv("apollo_ip")
-	secret := os.Getenv("apollo_secret")
-	namespace = os.Getenv("apollo_namespace")
+func init() {
+	appId := os.Getenv("CHUANMOON_APOLLO_APP_ID")
+	cluster := os.Getenv("CHUANMOON_APOLLO_CLUSTER")
+	ip := os.Getenv("CHUANMOON_APOLLO_IP")
+	secret := os.Getenv("CHUANMOON_APOLLO_SECRET")
+	namespace = os.Getenv("CHUANMOON_APOLLO_NAMESPACE")
+
+	if appId == "" || cluster == "" || ip == "" || secret == "" || namespace == "" {
+		panic("Apollo config not set, please check your environment variables: CHUANMOON_APOLLO_APP_ID, CHUANMOON_APOLLO_CLUSTER, CHUANMOON_APOLLO_IP, CHUANMOON_APOLLO_SECRET, CHUANMOON_APOLLO_NAMESPACE")
+	}
 
 	c := &config.AppConfig{
 		AppID:          appId,
