@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chuanmoon/utils/cyconfig"
+	"github.com/chuanmoon/utils/cybase"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 )
@@ -44,7 +44,7 @@ func NewTool(appName string, logger *zap.Logger) *Tool {
 		logger:  logger,
 	}
 
-	t.natsUrl = cyconfig.String("nats_url", "0.0.0.0:4222")
+	t.natsUrl = cybase.ReadConfig("cy_nats_url", "0.0.0.0:4222")
 	t.natsConn, err = nats.Connect(t.natsUrl,
 		nats.Name(appName),
 		nats.DontRandomize(),
