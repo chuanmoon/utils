@@ -5,7 +5,7 @@
 
 (/etc/chuanmoon/odoo.conf)中有db的配置 
 
-其他的配置存储在 cy_matedata 表
+其他的配置存储在 cy_base_matedata 表
 
 ``` conf
 [options]
@@ -20,7 +20,7 @@ db_name = chuanmoon
 db_query = 'sslmode=disable'
 ```
 
-## cy_matedata
+## cy_base_matedata
 
 |key| 描述|
 | - | - |
